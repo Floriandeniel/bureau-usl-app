@@ -1,0 +1,14 @@
+{
+  "name": "bureau-usl-app",
+  "version": "1.0.0",
+  "description": "Bureau'USL - annonces, evenements, documents, presence en direct pour le club USL",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "uuid": "^9.0.1",
+    "mongodb": "^6.10.0"
+  }
+}
