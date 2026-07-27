@@ -69,6 +69,22 @@ body {
   color: #000;
   border-color: var(--or);
 }
+.btn-notif {
+  background: transparent;
+  color: var(--or-clair);
+  border: 2px solid var(--or-clair);
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-size: 17px;
+  cursor: pointer;
+  line-height: 1;
+}
+.btn-notif:hover { background: rgba(240, 185, 11, 0.12); }
+.btn-notif.actif {
+  background: var(--or);
+  color: #000;
+  border-color: var(--or);
+}
 
 /* ---------- Tabs ---------- */
 .tabs {
