@@ -67,7 +67,7 @@ function requireAdmin(req, res, next) {
 
 function defaultFinances() {
   return {
-    charges: 0,
+    charges: { actuel: 0, objectif: 0 },
     banque: { actuel: 0, objectif: 0 },
     partenariat: { actuel: 0, objectif: 0 },
     stage: { actuel: 0, objectif: 0 },
@@ -95,7 +95,13 @@ function migrateState(state) {
   ['banque', 'partenariat', 'stage', 'subventions', 'adhesions'].forEach((k) => {
     if (!state.finances[k]) { state.finances[k] = { actuel: 0, objectif: 0 }; changed = true; }
   });
-  if (typeof state.finances.charges !== 'number') { state.finances.charges = 0; changed = true; }
+  // Ancien format : "charges" etait un simple nombre. On le convertit en
+  // { actuel, objectif } comme les autres categories.
+  if (typeof state.finances.charges === 'number') {
+    state.finances.charges = { actuel: state.finances.charges, objectif: 0 };
+    changed = true;
+  }
+  if (!state.finances.charges) { state.finances.charges = { actuel: 0, objectif: 0 }; changed = true; }
   return changed;
 }
 
@@ -106,7 +112,7 @@ function calculerFinances(finances) {
     + (finances.stage.actuel || 0)
     + (finances.subventions.actuel || 0)
     + (finances.adhesions.actuel || 0);
-  const benefice = produits - (finances.charges || 0);
+  const benefice = produits - (finances.charges.actuel || 0);
   let statut = 'rouge';
   if (benefice > 4000) statut = 'vert';
   else if (benefice >= 1000) statut = 'orange';
@@ -425,7 +431,7 @@ app.get('/api/finances', async (req, res) => {
 
 app.put('/api/finances', requireAdmin, async (req, res) => {
   const state = await loadState();
-  const champs = ['banque', 'partenariat', 'stage', 'subventions', 'adhesions'];
+  const champs = ['charges', 'banque', 'partenariat', 'stage', 'subventions', 'adhesions'];
   champs.forEach((k) => {
     if (req.body[k]) {
       const actuel = Number(req.body[k].actuel);
@@ -436,10 +442,6 @@ app.put('/api/finances', requireAdmin, async (req, res) => {
       };
     }
   });
-  if (req.body.charges !== undefined) {
-    const charges = Number(req.body.charges);
-    if (Number.isFinite(charges)) state.finances.charges = charges;
-  }
   await saveState(state);
   res.json({ ...state.finances, ...calculerFinances(state.finances) });
 });
