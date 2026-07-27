@@ -34,6 +34,7 @@
   <button class="tab-btn" data-tab="presence">Presence</button>
   <button class="tab-btn" data-tab="evenements">Calendrier</button>
   <button class="tab-btn" data-tab="documents">Documents</button>
+  <button class="tab-btn" data-tab="finances">Finances</button>
   <button class="tab-btn" data-tab="parametres" id="tab-btn-parametres" style="display:none">Parametres</button>
 </nav>
 
@@ -70,6 +71,11 @@
         <div class="tuile-icone">&#128101;<span class="dot-live" id="dot-live-accueil"></span></div>
         <div class="tuile-titre">Presence salaries actuellement</div>
         <div class="tuile-apercu" id="apercu-presence"><span class="spinner-inline"></span></div>
+      </button>
+      <button class="tuile tuile-anim" data-goto="finances" style="animation-delay:240ms" title="Voir l'etat des finances du club">
+        <div class="tuile-icone">&#128176;<span class="dot-statut" id="dot-statut-finances"></span></div>
+        <div class="tuile-titre">Finances du club</div>
+        <div class="tuile-apercu" id="apercu-finances"><span class="spinner-inline"></span></div>
       </button>
     </div>
 
@@ -141,6 +147,56 @@
         <thead><tr><th>Nom</th><th>Ajoute le</th><th>Taille</th><th>Actions</th></tr></thead>
         <tbody></tbody>
       </table>
+    </div>
+  </section>
+
+  <!-- ONGLET FINANCES -->
+  <section id="tab-finances" class="tab-content">
+    <div class="card" id="statut-finances-card">
+      <h2>&#128176; Etat des finances</h2>
+      <div id="statut-finances-banniere" class="statut-finances">
+        <span class="spinner-inline"></span> Chargement...
+      </div>
+    </div>
+
+    <div class="grille-finances" id="grille-finances">
+      <!-- Rempli par app.js : banque, partenariat, stage, subventions, adhesions -->
+    </div>
+
+    <div class="card" id="form-finances-card" style="display:none">
+      <h2>Modifier les chiffres</h2>
+      <p class="hint">Ces montants sont visibles par tous les membres. Seuls les responsables peuvent les modifier.</p>
+      <div class="form-row">
+        <label>Charges actuelles (&euro;) <input type="number" id="fin-charges" step="0.01" /></label>
+      </div>
+      <div class="form-finances-grille">
+        <div class="form-finances-bloc">
+          <h3>Compte en banque</h3>
+          <label>Actuel (&euro;) <input type="number" id="fin-banque-actuel" step="0.01" /></label>
+          <label>Objectif saison (&euro;) <input type="number" id="fin-banque-objectif" step="0.01" /></label>
+        </div>
+        <div class="form-finances-bloc">
+          <h3>Partenariats</h3>
+          <label>Rentre (&euro;) <input type="number" id="fin-partenariat-actuel" step="0.01" /></label>
+          <label>Objectif saison (&euro;) <input type="number" id="fin-partenariat-objectif" step="0.01" /></label>
+        </div>
+        <div class="form-finances-bloc">
+          <h3>Stages</h3>
+          <label>Rentre (&euro;) <input type="number" id="fin-stage-actuel" step="0.01" /></label>
+          <label>Objectif saison (&euro;) <input type="number" id="fin-stage-objectif" step="0.01" /></label>
+        </div>
+        <div class="form-finances-bloc">
+          <h3>Subventions</h3>
+          <label>Actuel (&euro;) <input type="number" id="fin-subventions-actuel" step="0.01" /></label>
+          <label>Objectif (&euro;) <input type="number" id="fin-subventions-objectif" step="0.01" /></label>
+        </div>
+        <div class="form-finances-bloc">
+          <h3>Adhesions</h3>
+          <label>Actuel (&euro;) <input type="number" id="fin-adhesions-actuel" step="0.01" /></label>
+          <label>Objectif (&euro;) <input type="number" id="fin-adhesions-objectif" step="0.01" /></label>
+        </div>
+      </div>
+      <button id="btn-save-finances" class="btn btn-go">Enregistrer</button>
     </div>
   </section>
 
