@@ -99,7 +99,44 @@ body {
 main { padding: 24px 28px 60px; max-width: 1100px; margin: 0 auto; }
 
 .tab-content { display: none; }
-.tab-content.active { display: block; }
+.tab-content.active { display: block; animation: fadeIn 0.28s ease; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ---------- Banniere de bienvenue ---------- */
+.banniere-bienvenue {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(240,185,11,0.14), rgba(240,185,11,0.04));
+  border: 2px solid var(--or-fonce);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.35s ease;
+}
+.banniere-bienvenue.hidden { display: none; }
+.banniere-emoji { font-size: 26px; line-height: 1; }
+.banniere-texte { flex: 1; }
+.banniere-texte strong { color: var(--or-clair); font-size: 15px; }
+.banniere-texte p { margin: 4px 0 0; color: var(--gris-clair); font-size: 13.5px; line-height: 1.5; }
+.btn-fermer-banniere {
+  background: transparent;
+  border: none;
+  color: var(--gris-clair);
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+}
+.btn-fermer-banniere:hover { color: var(--or-clair); }
 
 /* ---------- Tuiles (tableau de bord accueil) ---------- */
 .grille-tuiles {
@@ -117,12 +154,48 @@ main { padding: 24px 28px 60px; max-width: 1100px; margin: 0 auto; }
   cursor: pointer;
   color: var(--blanc);
   font-family: var(--font-principale);
-  transition: transform 0.1s, border-color 0.15s;
+  transition: transform 0.12s ease, border-color 0.15s, box-shadow 0.15s;
+  opacity: 0;
 }
-.tuile:hover { border-color: var(--or); transform: translateY(-2px); }
-.tuile-icone { font-size: 22px; margin-bottom: 6px; }
+.tuile-anim { animation: popIn 0.4s ease forwards; }
+.tuile:hover { border-color: var(--or); transform: translateY(-3px) scale(1.015); box-shadow: 0 8px 20px rgba(240,185,11,0.18); }
+.tuile:active { transform: translateY(-1px) scale(0.99); }
+.tuile-icone { font-size: 24px; margin-bottom: 6px; position: relative; display: inline-block; }
 .tuile-titre { font-weight: 900; color: var(--or); font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
-.tuile-apercu { color: var(--gris-clair); font-size: 13.5px; line-height: 1.4; }
+.tuile-apercu { color: var(--gris-clair); font-size: 13.5px; line-height: 1.4; min-height: 18px; }
+
+.dot-live {
+  position: absolute;
+  top: -2px;
+  right: -10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--vert-ok);
+  box-shadow: 0 0 0 rgba(67,160,71,0.6);
+  animation: pulseLive 1.8s infinite;
+}
+.dot-live.hidden { display: none; }
+@keyframes pulseLive {
+  0% { box-shadow: 0 0 0 0 rgba(67,160,71,0.55); }
+  70% { box-shadow: 0 0 0 8px rgba(67,160,71,0); }
+  100% { box-shadow: 0 0 0 0 rgba(67,160,71,0); }
+}
+
+/* ---------- Spinner ---------- */
+.spinner-inline {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(240,185,11,0.25);
+  border-top-color: var(--or);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: -2px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.presence-maj { color: var(--gris-clair); font-size: 12.5px; margin: 4px 0 0; font-style: italic; }
 
 .carte-actus { border-color: var(--or-fonce); }
 
@@ -201,6 +274,7 @@ select:focus, input:focus, textarea:focus { outline: none; border-color: var(--o
   border-left: 6px solid var(--or);
   border-radius: 10px;
   padding: 16px 20px;
+  animation: popIn 0.35s ease both;
 }
 .carte-item h3 { margin: 0 0 6px; color: var(--or-clair); font-size: 17px; }
 .carte-item .carte-date { color: var(--gris-clair); font-size: 13px; font-weight: 700; margin-bottom: 8px; }
@@ -216,6 +290,7 @@ select:focus, input:focus, textarea:focus { outline: none; border-color: var(--o
   border-radius: 12px;
   padding: 14px 18px;
   min-width: 160px;
+  animation: popIn 0.35s ease both;
 }
 .presence-item .presence-nom { font-weight: 800; font-size: 16px; color: var(--blanc); }
 .presence-item .presence-salle { color: var(--or-clair); font-weight: 700; font-size: 14px; margin-top: 4px; }
@@ -252,6 +327,36 @@ tbody tr:hover { background: rgba(240, 185, 11, 0.10); }
 }
 .toast.error { background: var(--rouge-alerte); color: #fff; }
 .toast.hidden { display: none; }
+
+/* ---------- Confirmation animee ---------- */
+.check-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  pointer-events: none;
+}
+.check-overlay.hidden { display: none; }
+.check-circle {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: var(--vert-ok);
+  color: #fff;
+  font-size: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: checkPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+@keyframes checkPop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
 
 @media (max-width: 700px) {
   .app-header { flex-direction: column; align-items: flex-start; gap: 10px; }
