@@ -444,6 +444,7 @@ function libelleStatutFinances(statut) {
 }
 
 const CATEGORIES_FINANCES = [
+  { key: 'charges', label: 'Depenses / Charges' },
   { key: 'banque', label: 'Compte en banque' },
   { key: 'partenariat', label: 'Partenariats' },
   { key: 'stage', label: 'Stages' },
@@ -462,7 +463,7 @@ async function chargerFinances() {
     banniere.innerHTML = `
       <div class="statut-titre">${libelleStatutFinances(data.statut)}</div>
       <div class="statut-chiffre">Benefice actuel : ${formatEuro(data.benefice)}</div>
-      <div class="statut-detail">Produits : ${formatEuro(data.produits)} &bull; Charges : ${formatEuro(data.charges)}</div>
+      <div class="statut-detail">Produits : ${formatEuro(data.produits)} &bull; Charges : ${formatEuro((data.charges || {}).actuel)}</div>
     `;
 
     grille.innerHTML = CATEGORIES_FINANCES.map((c) => {
@@ -479,7 +480,6 @@ async function chargerFinances() {
     }).join('');
 
     if (isAdmin()) {
-      document.getElementById('fin-charges').value = data.charges || 0;
       CATEGORIES_FINANCES.forEach((c) => {
         const val = data[c.key] || { actuel: 0, objectif: 0 };
         document.getElementById(`fin-${c.key}-actuel`).value = val.actuel;
@@ -492,7 +492,7 @@ async function chargerFinances() {
 }
 
 document.getElementById('btn-save-finances').addEventListener('click', async () => {
-  const body = { charges: document.getElementById('fin-charges').value };
+  const body = {};
   CATEGORIES_FINANCES.forEach((c) => {
     body[c.key] = {
       actuel: document.getElementById(`fin-${c.key}-actuel`).value,
