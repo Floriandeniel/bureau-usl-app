@@ -46,7 +46,7 @@
       <span class="banniere-emoji">&#127943;</span>
       <div class="banniere-texte">
         <strong>Bienvenue sur Bureau'USL !</strong>
-        <p>Chaque tuile t'emmene vers une section : les Alertes pour les infos importantes, le Calendrier pour les evenements a venir, les Documents a telecharger, et la Presence pour voir qui est la en ce moment.</p>
+        <p>Chaque tuile t'emmene vers une section : les Alertes pour les infos importantes, le Calendrier pour les evenements a venir, les Documents a telecharger, la Presence pour voir qui est la en ce moment, et les Finances pour suivre les comptes du club.</p>
       </div>
       <button id="btn-fermer-banniere" class="btn-fermer-banniere" aria-label="Fermer">&times;</button>
     </div>
@@ -160,16 +160,18 @@
     </div>
 
     <div class="grille-finances" id="grille-finances">
-      <!-- Rempli par app.js : banque, partenariat, stage, subventions, adhesions -->
+      <!-- Rempli par app.js : depenses, banque, partenariat, stage, subventions, adhesions -->
     </div>
 
     <div class="card" id="form-finances-card" style="display:none">
       <h2>Modifier les chiffres</h2>
       <p class="hint">Ces montants sont visibles par tous les membres. Seuls les responsables peuvent les modifier.</p>
-      <div class="form-row">
-        <label>Charges actuelles (&euro;) <input type="number" id="fin-charges" step="0.01" /></label>
-      </div>
       <div class="form-finances-grille">
+        <div class="form-finances-bloc">
+          <h3>Depenses / Charges</h3>
+          <label>Actuelles (&euro;) <input type="number" id="fin-charges-actuel" step="0.01" /></label>
+          <label>Objectif / plafond saison (&euro;) <input type="number" id="fin-charges-objectif" step="0.01" /></label>
+        </div>
         <div class="form-finances-bloc">
           <h3>Compte en banque</h3>
           <label>Actuel (&euro;) <input type="number" id="fin-banque-actuel" step="0.01" /></label>
