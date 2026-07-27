@@ -19,9 +19,17 @@ const path = require('path');
 const crypto = require('crypto');
 const { v4: uuidv4 } = require('uuid');
 const { MongoClient } = require('mongodb');
+const webpush = require('web-push');
 
 // Adresse de l'application RH_USL (pour recuperer la presence en direct)
 const RH_USL_URL = process.env.RH_USL_URL || 'https://rh-usl-app.onrender.com';
+
+// Cles VAPID (notifications push navigateur). Generees une fois pour ce
+// projet : pas besoin de les changer, elles servent juste a signer les
+// notifications envoyees aux telephones abonnes.
+const VAPID_PUBLIC_KEY = 'BBXKSPNW52CIhwxhMdXXD39luGyA5iaz2QyhxJ5ZTnrwUELQqCnqCMlgWjauuFguGJsmP-WzvxjYVKFyL8Z_d_E';
+const VAPID_PRIVATE_KEY = 'E_rAdGXcz97EOU9TZneLi_-qn4yvIJIFkwT-BBmwviI';
+webpush.setVapidDetails('mailto:contact@bureau-usl.local', VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
 // Mot de passe administrateur par defaut (a changer depuis Parametres une
 // fois connecte). Partage entre tous les responsables autorises a publier.
@@ -188,6 +196,61 @@ async function deleteDocument(id) {
   writeLocalFile(full);
 }
 
+// ---------- Notifications push (abonnements telephone/navigateur) ----------
+
+async function listSubscriptions() {
+  if (MONGODB_URI) {
+    const client = await getMongoClient();
+    const col = client.db('uslclub').collection('subscriptions');
+    return col.find({}).toArray();
+  }
+  const full = readLocalFile();
+  return full.subscriptions || [];
+}
+
+async function addSubscription(sub) {
+  if (MONGODB_URI) {
+    const client = await getMongoClient();
+    const col = client.db('uslclub').collection('subscriptions');
+    await col.updateOne({ endpoint: sub.endpoint }, { $set: sub }, { upsert: true });
+    return;
+  }
+  const full = readLocalFile();
+  full.subscriptions = full.subscriptions || [];
+  full.subscriptions = full.subscriptions.filter((s) => s.endpoint !== sub.endpoint);
+  full.subscriptions.push(sub);
+  writeLocalFile(full);
+}
+
+async function removeSubscription(endpoint) {
+  if (MONGODB_URI) {
+    const client = await getMongoClient();
+    const col = client.db('uslclub').collection('subscriptions');
+    await col.deleteOne({ endpoint });
+    return;
+  }
+  const full = readLocalFile();
+  full.subscriptions = (full.subscriptions || []).filter((s) => s.endpoint !== endpoint);
+  writeLocalFile(full);
+}
+
+async function sendPushToAll(title, body) {
+  const subs = await listSubscriptions();
+  const payload = JSON.stringify({ title, body });
+  await Promise.all(subs.map(async (sub) => {
+    try {
+      await webpush.sendNotification(sub, payload);
+    } catch (e) {
+      // Abonnement expire ou invalide (410/404) -> on le retire silencieusement
+      if (e.statusCode === 404 || e.statusCode === 410) {
+        await removeSubscription(sub.endpoint);
+      } else {
+        console.error('Erreur envoi push:', e.message);
+      }
+    }
+  }));
+}
+
 // ---------- Routes : ADMINISTRATION ----------
 
 app.post('/api/admin/login', async (req, res) => {
@@ -225,6 +288,7 @@ app.post('/api/annonces', requireAdmin, async (req, res) => {
   const annonce = { id: uuidv4(), titre, texte, date: date || formatDateLocal(new Date()) };
   state.annonces.push(annonce);
   await saveState(state);
+  sendPushToAll(`Nouvelle annonce : ${titre}`, texte).catch((e) => console.error('Push annonce:', e.message));
   res.status(201).json(annonce);
 });
 
@@ -259,6 +323,7 @@ app.post('/api/evenements', requireAdmin, async (req, res) => {
   const evenement = { id: uuidv4(), titre, date, heure: heure || '', lieu: lieu || '', description: description || '' };
   state.evenements.push(evenement);
   await saveState(state);
+  sendPushToAll(`Nouvel evenement : ${titre}`, `${date}${heure ? ' a ' + heure : ''}${lieu ? ' - ' + lieu : ''}`).catch((e) => console.error('Push evenement:', e.message));
   res.status(201).json(evenement);
 });
 
@@ -332,6 +397,26 @@ app.get('/api/presence', async (req, res) => {
   } catch (e) {
     res.json({ date: null, presents: [], error: 'Presence indisponible pour le moment (le serveur RH_USL demarre peut-etre encore).' });
   }
+});
+
+// ---------- Routes : NOTIFICATIONS PUSH (telephone) ----------
+
+app.get('/api/push/public-key', (req, res) => {
+  res.json({ publicKey: VAPID_PUBLIC_KEY });
+});
+
+app.post('/api/push/subscribe', async (req, res) => {
+  const sub = req.body;
+  if (!sub || !sub.endpoint) return res.status(400).json({ error: 'Abonnement invalide' });
+  await addSubscription(sub);
+  res.status(201).json({ ok: true });
+});
+
+app.post('/api/push/unsubscribe', async (req, res) => {
+  const { endpoint } = req.body;
+  if (!endpoint) return res.status(400).json({ error: 'Endpoint requis' });
+  await removeSubscription(endpoint);
+  res.json({ ok: true });
 });
 
 app.listen(PORT, () => {
