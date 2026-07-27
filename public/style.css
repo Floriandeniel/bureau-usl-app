@@ -298,6 +298,73 @@ select:focus, input:focus, textarea:focus { outline: none; border-color: var(--o
 .carte-item .carte-actions { margin-top: 10px; display: flex; gap: 10px; }
 .carte-vide { color: var(--gris-clair); font-style: italic; }
 
+/* ---------- Finances ---------- */
+.dot-statut {
+  position: absolute;
+  top: -2px;
+  right: -10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gris-clair);
+}
+.dot-statut.dot-vert { background: var(--vert-ok); box-shadow: 0 0 6px rgba(67,160,71,0.7); }
+.dot-statut.dot-orange { background: var(--orange-alerte); box-shadow: 0 0 6px rgba(255,152,0,0.7); }
+.dot-statut.dot-rouge { background: var(--rouge-alerte); box-shadow: 0 0 6px rgba(229,57,53,0.7); }
+
+.statut-finances {
+  border-radius: 10px;
+  padding: 16px 18px;
+  border: 2px solid #444;
+  background: #000;
+}
+.statut-finances.statut-vert { border-color: var(--vert-ok); background: rgba(67,160,71,0.12); }
+.statut-finances.statut-orange { border-color: var(--orange-alerte); background: rgba(255,152,0,0.12); }
+.statut-finances.statut-rouge { border-color: var(--rouge-alerte); background: rgba(229,57,53,0.12); }
+.statut-titre { font-weight: 900; font-size: 17px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.statut-finances.statut-vert .statut-titre { color: var(--vert-ok); }
+.statut-finances.statut-orange .statut-titre { color: var(--orange-alerte); }
+.statut-finances.statut-rouge .statut-titre { color: var(--rouge-alerte); }
+.statut-chiffre { font-size: 20px; font-weight: 800; color: var(--blanc); margin-bottom: 4px; }
+.statut-detail { color: var(--gris-clair); font-size: 13.5px; }
+
+.grille-finances {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.carte-finance {
+  background: var(--noir-panel);
+  border: 1px solid #3a3a3a;
+  border-left: 6px solid var(--or);
+  border-radius: 10px;
+  padding: 16px 18px;
+  animation: popIn 0.35s ease both;
+}
+.carte-finance h3 { margin: 0 0 8px; color: var(--or-clair); font-size: 15px; text-transform: uppercase; letter-spacing: 0.4px; }
+.finance-chiffres { font-size: 16px; font-weight: 800; margin-bottom: 8px; }
+.barre-progres { background: #000; border: 1px solid #444; border-radius: 6px; height: 12px; overflow: hidden; }
+.barre-progres-remplie { height: 100%; background: linear-gradient(90deg, var(--or-fonce), var(--or)); transition: width 0.4s ease; }
+.finance-pct { color: var(--gris-clair); font-size: 12.5px; margin-top: 6px; }
+
+.form-finances-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.form-finances-bloc {
+  background: #000;
+  border: 1px solid #444;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.form-finances-bloc h3 { margin: 0; color: var(--or-clair); font-size: 14px; text-transform: uppercase; }
+
 /* ---------- Presence en direct ---------- */
 .liste-presence { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 14px; }
 .presence-item {
