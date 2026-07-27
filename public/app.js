@@ -422,6 +422,102 @@ function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
+// ---------- Notifications push (sur le telephone) ----------
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+}
+
+function pushSupporte() {
+  return 'serviceWorker' in navigator && 'PushManager' in window;
+}
+
+async function getAbonnementActuel() {
+  if (!pushSupporte()) return null;
+  const reg = await navigator.serviceWorker.ready;
+  return reg.pushManager.getSubscription();
+}
+
+function updateNotifUI(actif) {
+  const btn = document.getElementById('btn-notif');
+  if (!btn) return;
+  btn.classList.toggle('actif', !!actif);
+  btn.title = actif ? 'Notifications activees sur ce telephone (clic pour desactiver)' : 'Activer les notifications sur ce telephone';
+}
+
+async function activerNotifications() {
+  if (!pushSupporte()) {
+    toast("Les notifications ne sont pas prises en charge sur cet appareil/navigateur (sur iPhone, il faut d'abord ajouter l'appli a l'ecran d'accueil).", true);
+    return;
+  }
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      toast('Notifications refusees. Tu peux les autoriser plus tard dans les reglages du navigateur.', true);
+      return;
+    }
+    const reg = await navigator.serviceWorker.register('/sw.js');
+    await navigator.serviceWorker.ready;
+    const { publicKey } = await api('/api/push/public-key');
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey)
+    });
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sub)
+    });
+    updateNotifUI(true);
+    toast('Notifications activees sur ce telephone.');
+    showCheck();
+  } catch (e) {
+    toast('Impossible d\'activer les notifications : ' + e.message, true);
+  }
+}
+
+async function desactiverNotifications() {
+  try {
+    const sub = await getAbonnementActuel();
+    if (sub) {
+      await fetch('/api/push/unsubscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endpoint: sub.endpoint })
+      });
+      await sub.unsubscribe();
+    }
+    updateNotifUI(false);
+    toast('Notifications desactivees sur ce telephone.');
+  } catch (e) {
+    toast('Erreur : ' + e.message, true);
+  }
+}
+
+const btnNotif = document.getElementById('btn-notif');
+if (btnNotif) {
+  btnNotif.addEventListener('click', async () => {
+    const sub = await getAbonnementActuel();
+    if (sub) desactiverNotifications();
+    else activerNotifications();
+  });
+}
+
+(async function initNotifUI() {
+  if (!pushSupporte()) return;
+  try {
+    const sub = await getAbonnementActuel();
+    updateNotifUI(!!sub);
+  } catch (e) {
+    // pas grave si ca echoue au chargement, l'utilisateur pourra reessayer via le bouton
+  }
+})();
+
 // ---------- Init ----------
 
 function initApp() {
