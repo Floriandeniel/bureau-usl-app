@@ -27,6 +27,13 @@ function toast(message, isError) {
   toast._timer = setTimeout(() => { t.className = 'toast hidden'; }, 4000);
 }
 
+function showCheck() {
+  const overlay = document.getElementById('check-overlay');
+  overlay.classList.remove('hidden');
+  clearTimeout(showCheck._timer);
+  showCheck._timer = setTimeout(() => { overlay.classList.add('hidden'); }, 900);
+}
+
 function todayStr() {
   const d = new Date();
   const y = d.getFullYear();
@@ -117,6 +124,19 @@ document.querySelectorAll('.tuile').forEach((btn) => {
   btn.addEventListener('click', () => switchTab(btn.dataset.goto));
 });
 
+// ---------- Banniere de bienvenue ----------
+
+(function initBanniere() {
+  const banniere = document.getElementById('banniere-bienvenue');
+  if (!localStorage.getItem('clubusl_banniere_vue')) {
+    banniere.classList.remove('hidden');
+  }
+  document.getElementById('btn-fermer-banniere').addEventListener('click', () => {
+    banniere.classList.add('hidden');
+    localStorage.setItem('clubusl_banniere_vue', '1');
+  });
+})();
+
 // ---------- Accueil (tableau de bord en tuiles) ----------
 
 async function chargerAccueil() {
@@ -163,16 +183,20 @@ async function chargerAccueil() {
 
   try {
     const data = await api('/api/presence');
+    const dot = document.getElementById('dot-live-accueil');
     if (data.error) {
       document.getElementById('apercu-presence').textContent = 'Indisponible pour le moment';
+      dot.classList.add('hidden');
     } else {
       const n = (data.presents || []).length;
       document.getElementById('apercu-presence').textContent = n
         ? `${n} personne(s) actuellement presente(s)`
         : 'Personne present actuellement.';
+      dot.classList.toggle('hidden', n === 0);
     }
   } catch (e) {
     document.getElementById('apercu-presence').textContent = 'Indisponible';
+    document.getElementById('dot-live-accueil').classList.add('hidden');
   }
 }
 
@@ -210,6 +234,7 @@ document.getElementById('btn-add-annonce').addEventListener('click', async () =>
     document.getElementById('annonce-texte').value = '';
     document.getElementById('annonce-date').value = '';
     toast('Annonce publiee.');
+    showCheck();
     chargerAnnonces();
   } catch (e) {
     toast(e.message, true);
@@ -262,6 +287,7 @@ document.getElementById('btn-add-evenement').addEventListener('click', async () 
     await api('/api/evenements', { method: 'POST', body: JSON.stringify({ titre, date, heure, lieu, description }) });
     ['ev-titre', 'ev-date', 'ev-heure', 'ev-lieu', 'ev-description'].forEach((id) => { document.getElementById(id).value = ''; });
     toast('Evenement ajoute.');
+    showCheck();
     chargerEvenements();
   } catch (e) {
     toast(e.message, true);
@@ -318,6 +344,7 @@ document.getElementById('btn-add-document').addEventListener('click', async () =
     document.getElementById('doc-nom').value = '';
     fichierInput.value = '';
     toast('Document ajoute.');
+    showCheck();
     chargerDocuments();
   } catch (e) {
     toast(e.message, true);
@@ -347,18 +374,34 @@ function fileToBase64(file) {
 
 // ---------- Presence en direct ----------
 
+let presenceDerniereMaj = null;
+let presenceMajTimer = null;
+
+function demarrerCompteurMaj() {
+  clearInterval(presenceMajTimer);
+  presenceMajTimer = setInterval(() => {
+    const el = document.getElementById('presence-derniere-maj');
+    if (!el || !presenceDerniereMaj) return;
+    const secondes = Math.max(0, Math.round((Date.now() - presenceDerniereMaj) / 1000));
+    el.textContent = secondes < 5 ? 'Mis a jour a l\'instant' : `Mis a jour il y a ${secondes} secondes`;
+  }, 1000);
+}
+
 async function chargerPresence() {
   const zone = document.getElementById('liste-presence');
   const info = document.getElementById('presence-info');
-  zone.innerHTML = '<p class="hint">Chargement... (jusqu\'a 50 secondes si l\'application RH_USL etait en veille)</p>';
+  zone.innerHTML = '<p class="hint"><span class="spinner-inline"></span> Chargement... (jusqu\'a 50 secondes si l\'application RH_USL etait en veille)</p>';
   info.textContent = '';
   try {
     const data = await api('/api/presence');
     if (data.error) {
       zone.innerHTML = `<p class="carte-vide">${escapeHtml(data.error)}</p>`;
+      document.getElementById('presence-derniere-maj').textContent = '';
       return;
     }
     info.textContent = data.date ? `Situation du ${formatDateAffiche(data.date)}` : '';
+    presenceDerniereMaj = Date.now();
+    demarrerCompteurMaj();
     if (!data.presents || !data.presents.length) {
       zone.innerHTML = '<p class="carte-vide">Personne n\'est actuellement pointe comme present.</p>';
       return;
