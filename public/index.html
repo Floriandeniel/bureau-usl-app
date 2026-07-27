@@ -40,31 +40,40 @@
 
   <!-- ONGLET ACCUEIL (tableau de bord en tuiles) -->
   <section id="tab-accueil" class="tab-content active">
+    <div id="banniere-bienvenue" class="banniere-bienvenue hidden">
+      <span class="banniere-emoji">&#127943;</span>
+      <div class="banniere-texte">
+        <strong>Bienvenue sur Bureau'USL !</strong>
+        <p>Chaque tuile t'emmene vers une section : les Alertes pour les infos importantes, le Calendrier pour les evenements a venir, les Documents a telecharger, et la Presence pour voir qui est la en ce moment.</p>
+      </div>
+      <button id="btn-fermer-banniere" class="btn-fermer-banniere" aria-label="Fermer">&times;</button>
+    </div>
+
     <div class="grille-tuiles">
-      <button class="tuile" data-goto="annonces">
-        <div class="tuile-icone">!</div>
+      <button class="tuile tuile-anim" data-goto="annonces" style="animation-delay:0ms" title="Voir toutes les annonces et alertes du club">
+        <div class="tuile-icone">&#128680;</div>
         <div class="tuile-titre">Alertes urgentes</div>
-        <div class="tuile-apercu" id="apercu-alertes">Chargement...</div>
+        <div class="tuile-apercu" id="apercu-alertes"><span class="spinner-inline"></span></div>
       </button>
-      <button class="tuile" data-goto="evenements">
+      <button class="tuile tuile-anim" data-goto="evenements" style="animation-delay:60ms" title="Voir les prochains evenements du club">
         <div class="tuile-icone">&#128197;</div>
         <div class="tuile-titre">Calendrier</div>
-        <div class="tuile-apercu" id="apercu-calendrier">Chargement...</div>
+        <div class="tuile-apercu" id="apercu-calendrier"><span class="spinner-inline"></span></div>
       </button>
-      <button class="tuile" data-goto="documents">
+      <button class="tuile tuile-anim" data-goto="documents" style="animation-delay:120ms" title="Telecharger les documents du club">
         <div class="tuile-icone">&#128193;</div>
         <div class="tuile-titre">Documents</div>
-        <div class="tuile-apercu" id="apercu-documents">Chargement...</div>
+        <div class="tuile-apercu" id="apercu-documents"><span class="spinner-inline"></span></div>
       </button>
-      <button class="tuile" data-goto="presence">
-        <div class="tuile-icone">&#128101;</div>
+      <button class="tuile tuile-anim" data-goto="presence" style="animation-delay:180ms" title="Voir qui est present en direct">
+        <div class="tuile-icone">&#128101;<span class="dot-live" id="dot-live-accueil"></span></div>
         <div class="tuile-titre">Presence en direct</div>
-        <div class="tuile-apercu" id="apercu-presence">Chargement...</div>
+        <div class="tuile-apercu" id="apercu-presence"><span class="spinner-inline"></span></div>
       </button>
     </div>
 
     <div class="card carte-actus">
-      <h2>Actualites du club</h2>
+      <h2>&#127942; Actualites du club</h2>
       <div id="liste-actus-accueil"></div>
     </div>
   </section>
@@ -72,7 +81,7 @@
   <!-- ONGLET ANNONCES -->
   <section id="tab-annonces" class="tab-content">
     <div class="card" id="form-annonce-card" style="display:none">
-      <h2>Publier une annonce</h2>
+      <h2>&#128226; Publier une annonce</h2>
       <div class="form-col">
         <label>Titre <input type="text" id="annonce-titre" placeholder="Ex: Fermeture exceptionnelle" /></label>
         <label>Message <textarea id="annonce-texte" rows="4" placeholder="Detail de l'annonce..."></textarea></label>
@@ -87,9 +96,10 @@
   <!-- ONGLET PRESENCE -->
   <section id="tab-presence" class="tab-content">
     <div class="card">
-      <h2>Qui est present en ce moment</h2>
+      <h2>&#128101; Qui est present en ce moment</h2>
       <p class="hint">Mis a jour en direct a partir des pointages de l'application RH_USL.</p>
       <div id="presence-info" class="hint"></div>
+      <p class="presence-maj" id="presence-derniere-maj"></p>
       <div id="liste-presence" class="liste-presence"></div>
     </div>
   </section>
@@ -97,7 +107,7 @@
   <!-- ONGLET EVENEMENTS -->
   <section id="tab-evenements" class="tab-content">
     <div class="card" id="form-evenement-card" style="display:none">
-      <h2>Ajouter un evenement</h2>
+      <h2>&#127942; Ajouter un evenement</h2>
       <div class="form-row">
         <label>Titre <input type="text" id="ev-titre" placeholder="Ex: Sortie de fin d'annee" /></label>
         <label>Date <input type="date" id="ev-date" /></label>
@@ -116,7 +126,7 @@
   <!-- ONGLET DOCUMENTS -->
   <section id="tab-documents" class="tab-content">
     <div class="card" id="form-document-card" style="display:none">
-      <h2>Ajouter un document</h2>
+      <h2>&#128193; Ajouter un document</h2>
       <div class="form-row">
         <label>Nom du document <input type="text" id="doc-nom" placeholder="Ex: Reglement interieur" /></label>
         <label>Fichier <input type="file" id="doc-fichier" /></label>
@@ -148,6 +158,7 @@
 </main>
 
 <div id="toast" class="toast hidden"></div>
+<div id="check-overlay" class="check-overlay hidden"><div class="check-circle">&#10003;</div></div>
 
 <script src="app.js"></script>
 </body>
