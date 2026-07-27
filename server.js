@@ -65,11 +65,23 @@ function requireAdmin(req, res, next) {
   }).catch((e) => res.status(500).json({ error: e.message }));
 }
 
+function defaultFinances() {
+  return {
+    charges: 0,
+    banque: { actuel: 0, objectif: 0 },
+    partenariat: { actuel: 0, objectif: 0 },
+    stage: { actuel: 0, objectif: 0 },
+    subventions: { actuel: 0, objectif: 0 },
+    adhesions: { actuel: 0, objectif: 0 }
+  };
+}
+
 function defaultState() {
   return {
     settings: { nomClub: "Bureau'USL", adminPasswordHash: hashPassword(DEFAULT_ADMIN_PASSWORD) },
     annonces: [],
-    evenements: []
+    evenements: [],
+    finances: defaultFinances()
   };
 }
 
@@ -79,7 +91,26 @@ function migrateState(state) {
   if (!state.settings.adminPasswordHash) { state.settings.adminPasswordHash = hashPassword(DEFAULT_ADMIN_PASSWORD); changed = true; }
   if (!state.annonces) { state.annonces = []; changed = true; }
   if (!state.evenements) { state.evenements = []; changed = true; }
+  if (!state.finances) { state.finances = defaultFinances(); changed = true; }
+  ['banque', 'partenariat', 'stage', 'subventions', 'adhesions'].forEach((k) => {
+    if (!state.finances[k]) { state.finances[k] = { actuel: 0, objectif: 0 }; changed = true; }
+  });
+  if (typeof state.finances.charges !== 'number') { state.finances.charges = 0; changed = true; }
   return changed;
+}
+
+// Calcule le total des produits, le benefice et le statut (vert/orange/rouge)
+// a partir des chiffres saisis par les responsables.
+function calculerFinances(finances) {
+  const produits = (finances.partenariat.actuel || 0)
+    + (finances.stage.actuel || 0)
+    + (finances.subventions.actuel || 0)
+    + (finances.adhesions.actuel || 0);
+  const benefice = produits - (finances.charges || 0);
+  let statut = 'rouge';
+  if (benefice > 4000) statut = 'vert';
+  else if (benefice >= 1000) statut = 'orange';
+  return { produits, benefice, statut };
 }
 
 function formatDateLocal(d) {
@@ -144,6 +175,7 @@ async function saveState(state) {
   full.settings = state.settings;
   full.annonces = state.annonces;
   full.evenements = state.evenements;
+  full.finances = state.finances;
   writeLocalFile(full);
 }
 
@@ -382,6 +414,34 @@ app.get('/api/documents/:id/fichier', async (req, res) => {
 app.delete('/api/documents/:id', requireAdmin, async (req, res) => {
   await deleteDocument(req.params.id);
   res.json({ ok: true });
+});
+
+// ---------- Routes : FINANCES ----------
+
+app.get('/api/finances', async (req, res) => {
+  const state = await loadState();
+  res.json({ ...state.finances, ...calculerFinances(state.finances) });
+});
+
+app.put('/api/finances', requireAdmin, async (req, res) => {
+  const state = await loadState();
+  const champs = ['banque', 'partenariat', 'stage', 'subventions', 'adhesions'];
+  champs.forEach((k) => {
+    if (req.body[k]) {
+      const actuel = Number(req.body[k].actuel);
+      const objectif = Number(req.body[k].objectif);
+      state.finances[k] = {
+        actuel: Number.isFinite(actuel) ? actuel : state.finances[k].actuel,
+        objectif: Number.isFinite(objectif) ? objectif : state.finances[k].objectif
+      };
+    }
+  });
+  if (req.body.charges !== undefined) {
+    const charges = Number(req.body.charges);
+    if (Number.isFinite(charges)) state.finances.charges = charges;
+  }
+  await saveState(state);
+  res.json({ ...state.finances, ...calculerFinances(state.finances) });
 });
 
 // ---------- Route : PRESENCE EN DIRECT (via RH_USL) ----------
