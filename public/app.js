@@ -59,6 +59,7 @@ function updateAdminUI() {
   document.getElementById('form-annonce-card').style.display = admin ? '' : 'none';
   document.getElementById('form-evenement-card').style.display = admin ? '' : 'none';
   document.getElementById('form-document-card').style.display = admin ? '' : 'none';
+  document.getElementById('form-finances-card').style.display = admin ? '' : 'none';
   if (!admin) {
     const tab = document.querySelector('.tab-btn.active');
     if (tab && tab.dataset.tab === 'parametres') switchTab('accueil');
@@ -88,6 +89,7 @@ document.getElementById('btn-admin').addEventListener('click', async () => {
     chargerAnnonces();
     chargerEvenements();
     chargerDocuments();
+    chargerFinances();
   } catch (e) {
     toast(e.message, true);
   }
@@ -114,6 +116,7 @@ function switchTab(name) {
   document.querySelectorAll('.tab-content').forEach((s) => s.classList.toggle('active', s.id === `tab-${name}`));
   if (name === 'presence') chargerPresence();
   if (name === 'accueil') chargerAccueil();
+  if (name === 'finances') chargerFinances();
 }
 
 document.querySelectorAll('.tab-btn').forEach((btn) => {
@@ -197,6 +200,15 @@ async function chargerAccueil() {
   } catch (e) {
     document.getElementById('apercu-presence').textContent = 'Indisponible';
     document.getElementById('dot-live-accueil').classList.add('hidden');
+  }
+
+  try {
+    const data = await api('/api/finances');
+    const dot = document.getElementById('dot-statut-finances');
+    dot.className = 'dot-statut dot-' + data.statut;
+    document.getElementById('apercu-finances').textContent = `Benefice actuel : ${formatEuro(data.benefice)}`;
+  } catch (e) {
+    document.getElementById('apercu-finances').textContent = 'Indisponible';
   }
 }
 
@@ -417,6 +429,86 @@ async function chargerPresence() {
     zone.innerHTML = `<p class="carte-vide">Impossible de recuperer la presence : ${escapeHtml(e.message)}</p>`;
   }
 }
+
+// ---------- Finances ----------
+
+function formatEuro(n) {
+  const val = Number(n) || 0;
+  return val.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + ' €';
+}
+
+function libelleStatutFinances(statut) {
+  if (statut === 'vert') return 'Situation saine';
+  if (statut === 'orange') return 'Situation a surveiller';
+  return 'Situation dans le rouge';
+}
+
+const CATEGORIES_FINANCES = [
+  { key: 'banque', label: 'Compte en banque' },
+  { key: 'partenariat', label: 'Partenariats' },
+  { key: 'stage', label: 'Stages' },
+  { key: 'subventions', label: 'Subventions' },
+  { key: 'adhesions', label: 'Adhesions' }
+];
+
+async function chargerFinances() {
+  const banniere = document.getElementById('statut-finances-banniere');
+  const grille = document.getElementById('grille-finances');
+  banniere.className = 'statut-finances';
+  banniere.innerHTML = '<span class="spinner-inline"></span> Chargement...';
+  try {
+    const data = await api('/api/finances');
+    banniere.className = 'statut-finances statut-' + data.statut;
+    banniere.innerHTML = `
+      <div class="statut-titre">${libelleStatutFinances(data.statut)}</div>
+      <div class="statut-chiffre">Benefice actuel : ${formatEuro(data.benefice)}</div>
+      <div class="statut-detail">Produits : ${formatEuro(data.produits)} &bull; Charges : ${formatEuro(data.charges)}</div>
+    `;
+
+    grille.innerHTML = CATEGORIES_FINANCES.map((c) => {
+      const val = data[c.key] || { actuel: 0, objectif: 0 };
+      const pct = val.objectif > 0 ? Math.min(100, Math.round((val.actuel / val.objectif) * 100)) : 0;
+      return `
+        <div class="carte-finance">
+          <h3>${c.label}</h3>
+          <div class="finance-chiffres">${formatEuro(val.actuel)} / ${formatEuro(val.objectif)}</div>
+          <div class="barre-progres"><div class="barre-progres-remplie" style="width:${pct}%"></div></div>
+          <div class="finance-pct">${pct}% de l'objectif saison</div>
+        </div>
+      `;
+    }).join('');
+
+    if (isAdmin()) {
+      document.getElementById('fin-charges').value = data.charges || 0;
+      CATEGORIES_FINANCES.forEach((c) => {
+        const val = data[c.key] || { actuel: 0, objectif: 0 };
+        document.getElementById(`fin-${c.key}-actuel`).value = val.actuel;
+        document.getElementById(`fin-${c.key}-objectif`).value = val.objectif;
+      });
+    }
+  } catch (e) {
+    banniere.innerHTML = `<p class="carte-vide">Erreur : ${escapeHtml(e.message)}</p>`;
+  }
+}
+
+document.getElementById('btn-save-finances').addEventListener('click', async () => {
+  const body = { charges: document.getElementById('fin-charges').value };
+  CATEGORIES_FINANCES.forEach((c) => {
+    body[c.key] = {
+      actuel: document.getElementById(`fin-${c.key}-actuel`).value,
+      objectif: document.getElementById(`fin-${c.key}-objectif`).value
+    };
+  });
+  try {
+    await api('/api/finances', { method: 'PUT', body: JSON.stringify(body) });
+    toast('Finances mises a jour.');
+    showCheck();
+    chargerFinances();
+    chargerAccueil();
+  } catch (e) {
+    toast(e.message, true);
+  }
+});
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
