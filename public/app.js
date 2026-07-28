@@ -92,6 +92,7 @@ document.getElementById('btn-admin').addEventListener('click', async () => {
     chargerDocuments();
     chargerFinances();
     chargerIdees();
+    chargerStats();
   } catch (e) {
     toast(e.message, true);
   }
@@ -120,6 +121,7 @@ function switchTab(name) {
   if (name === 'accueil') chargerAccueil();
   if (name === 'finances') chargerFinances();
   if (name === 'idees' && isAdmin()) chargerIdees();
+  if (name === 'parametres' && isAdmin()) chargerStats();
 }
 
 document.querySelectorAll('.tab-btn').forEach((btn) => {
@@ -566,6 +568,33 @@ document.getElementById('liste-idees').addEventListener('click', async (ev) => {
     toast(e.message, true);
   }
 });
+
+// ---------- Statistiques de frequentation (espace responsables) ----------
+
+async function chargerStats() {
+  if (!isAdmin()) return;
+  const zone = document.getElementById('stats-visites');
+  zone.innerHTML = '<span class="spinner-inline"></span> Chargement...';
+  try {
+    const data = await api('/api/stats');
+    zone.innerHTML = `
+      <div class="carte-finance">
+        <h3>Visites (7 derniers jours)</h3>
+        <div class="finance-chiffres">${data.semaine}</div>
+      </div>
+      <div class="carte-finance">
+        <h3>Visites (30 derniers jours)</h3>
+        <div class="finance-chiffres">${data.mois}</div>
+      </div>
+    `;
+  } catch (e) {
+    zone.innerHTML = `<p class="carte-vide">Erreur : ${escapeHtml(e.message)}</p>`;
+  }
+}
+
+// Enregistre une visite (une fois par ouverture de l'appli), sans bloquer
+// le chargement du reste si ca echoue.
+fetch('/api/stats/visite', { method: 'POST' }).catch(() => {});
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
