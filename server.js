@@ -81,7 +81,8 @@ function defaultState() {
     settings: { nomClub: "Bureau'USL", adminPasswordHash: hashPassword(DEFAULT_ADMIN_PASSWORD) },
     annonces: [],
     evenements: [],
-    finances: defaultFinances()
+    finances: defaultFinances(),
+    idees: []
   };
 }
 
@@ -91,6 +92,7 @@ function migrateState(state) {
   if (!state.settings.adminPasswordHash) { state.settings.adminPasswordHash = hashPassword(DEFAULT_ADMIN_PASSWORD); changed = true; }
   if (!state.annonces) { state.annonces = []; changed = true; }
   if (!state.evenements) { state.evenements = []; changed = true; }
+  if (!state.idees) { state.idees = []; changed = true; }
   if (!state.finances) { state.finances = defaultFinances(); changed = true; }
   ['banque', 'partenariat', 'stage', 'subventions', 'adhesions'].forEach((k) => {
     if (!state.finances[k]) { state.finances[k] = { actuel: 0, objectif: 0 }; changed = true; }
@@ -182,6 +184,7 @@ async function saveState(state) {
   full.annonces = state.annonces;
   full.evenements = state.evenements;
   full.finances = state.finances;
+  full.idees = state.idees;
   writeLocalFile(full);
 }
 
@@ -377,6 +380,34 @@ app.put('/api/evenements/:id', requireAdmin, async (req, res) => {
 app.delete('/api/evenements/:id', requireAdmin, async (req, res) => {
   const state = await loadState();
   state.evenements = state.evenements.filter((x) => x.id !== req.params.id);
+  await saveState(state);
+  res.json({ ok: true });
+});
+
+// ---------- Routes : BOITE A IDEES (anonyme) ----------
+// Envoi ouvert a tous, sans mot de passe : aucune identite n'est demandee ni
+// enregistree (pas de nom, pas d'IP, pas de compte). Seuls les responsables
+// peuvent consulter et supprimer les idees recues.
+
+app.post('/api/idees', async (req, res) => {
+  const state = await loadState();
+  const { texte } = req.body;
+  if (!texte || !texte.trim()) return res.status(400).json({ error: 'Le message ne peut pas etre vide' });
+  const idee = { id: uuidv4(), texte: texte.trim().slice(0, 2000), date: formatDateLocal(new Date()) };
+  state.idees.push(idee);
+  await saveState(state);
+  res.status(201).json({ ok: true });
+});
+
+app.get('/api/idees', requireAdmin, async (req, res) => {
+  const state = await loadState();
+  const list = [...state.idees].sort((a, b) => (b.date + b.id).localeCompare(a.date + a.id));
+  res.json(list);
+});
+
+app.delete('/api/idees/:id', requireAdmin, async (req, res) => {
+  const state = await loadState();
+  state.idees = state.idees.filter((x) => x.id !== req.params.id);
   await saveState(state);
   res.json({ ok: true });
 });
