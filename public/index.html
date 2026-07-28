@@ -35,6 +35,7 @@
   <button class="tab-btn" data-tab="evenements">Calendrier</button>
   <button class="tab-btn" data-tab="documents">Documents</button>
   <button class="tab-btn" data-tab="finances">Finances</button>
+  <button class="tab-btn" data-tab="idees">Boite a idees</button>
   <button class="tab-btn" data-tab="parametres" id="tab-btn-parametres" style="display:none">Parametres</button>
 </nav>
 
@@ -46,7 +47,7 @@
       <span class="banniere-emoji">&#127943;</span>
       <div class="banniere-texte">
         <strong>Bienvenue sur Bureau'USL !</strong>
-        <p>Chaque tuile t'emmene vers une section : les Alertes pour les infos importantes, le Calendrier pour les evenements a venir, les Documents a telecharger, la Presence pour voir qui est la en ce moment, et les Finances pour suivre les comptes du club.</p>
+        <p>Chaque tuile t'emmene vers une section : les Alertes pour les infos importantes, le Calendrier pour les evenements a venir, les Documents a telecharger, la Presence pour voir qui est la en ce moment, les Finances pour suivre les comptes du club, et la Boite a idees pour proposer tes remarques anonymement.</p>
       </div>
       <button id="btn-fermer-banniere" class="btn-fermer-banniere" aria-label="Fermer">&times;</button>
     </div>
@@ -76,6 +77,11 @@
         <div class="tuile-icone">&#128176;<span class="dot-statut" id="dot-statut-finances"></span></div>
         <div class="tuile-titre">Finances du club</div>
         <div class="tuile-apercu" id="apercu-finances"><span class="spinner-inline"></span></div>
+      </button>
+      <button class="tuile tuile-anim" data-goto="idees" style="animation-delay:300ms" title="Proposer une idee ou une remarque, anonymement">
+        <div class="tuile-icone">&#128161;</div>
+        <div class="tuile-titre">Boite a idees</div>
+        <div class="tuile-apercu">Propose une idee, anonymement</div>
       </button>
     </div>
 
@@ -199,6 +205,24 @@
         </div>
       </div>
       <button id="btn-save-finances" class="btn btn-go">Enregistrer</button>
+    </div>
+  </section>
+
+  <!-- ONGLET BOITE A IDEES -->
+  <section id="tab-idees" class="tab-content">
+    <div class="card">
+      <h2>&#128161; Boite a idees</h2>
+      <p class="hint">Une remarque, une idee, un souci que tu n'oses pas dire en reunion ? Envoie-le ici, de maniere 100% anonyme : aucun nom, aucune identite n'est enregistree.</p>
+      <div class="form-col">
+        <label>Ton idee ou ta remarque <textarea id="idee-texte" rows="4" placeholder="Ecris ici, personne ne saura que c'est toi..."></textarea></label>
+      </div>
+      <button id="btn-add-idee" class="btn btn-go">Envoyer anonymement</button>
+    </div>
+
+    <div class="card" id="liste-idees-card" style="display:none">
+      <h2>Idees recues (espace responsables)</h2>
+      <p class="hint">Ces messages sont anonymes : impossible de savoir qui les a envoyes.</p>
+      <div id="liste-idees" class="liste-cartes"></div>
     </div>
   </section>
 
