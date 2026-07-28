@@ -60,6 +60,7 @@ function updateAdminUI() {
   document.getElementById('form-evenement-card').style.display = admin ? '' : 'none';
   document.getElementById('form-document-card').style.display = admin ? '' : 'none';
   document.getElementById('form-finances-card').style.display = admin ? '' : 'none';
+  document.getElementById('liste-idees-card').style.display = admin ? '' : 'none';
   if (!admin) {
     const tab = document.querySelector('.tab-btn.active');
     if (tab && tab.dataset.tab === 'parametres') switchTab('accueil');
@@ -90,6 +91,7 @@ document.getElementById('btn-admin').addEventListener('click', async () => {
     chargerEvenements();
     chargerDocuments();
     chargerFinances();
+    chargerIdees();
   } catch (e) {
     toast(e.message, true);
   }
@@ -117,6 +119,7 @@ function switchTab(name) {
   if (name === 'presence') chargerPresence();
   if (name === 'accueil') chargerAccueil();
   if (name === 'finances') chargerFinances();
+  if (name === 'idees' && isAdmin()) chargerIdees();
 }
 
 document.querySelectorAll('.tab-btn').forEach((btn) => {
@@ -505,6 +508,60 @@ document.getElementById('btn-save-finances').addEventListener('click', async () 
     showCheck();
     chargerFinances();
     chargerAccueil();
+  } catch (e) {
+    toast(e.message, true);
+  }
+});
+
+// ---------- Boite a idees (anonyme) ----------
+
+document.getElementById('btn-add-idee').addEventListener('click', async () => {
+  const champ = document.getElementById('idee-texte');
+  const texte = champ.value.trim();
+  if (!texte) return toast('Ecris ton idee avant d\'envoyer.', true);
+  try {
+    await fetch('/api/idees', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texte })
+    });
+    champ.value = '';
+    toast('Idee envoyee anonymement, merci !');
+    showCheck();
+    if (isAdmin()) chargerIdees();
+  } catch (e) {
+    toast('Erreur lors de l\'envoi.', true);
+  }
+});
+
+async function chargerIdees() {
+  if (!isAdmin()) return;
+  const zone = document.getElementById('liste-idees');
+  try {
+    const list = await api('/api/idees');
+    if (!list.length) {
+      zone.innerHTML = '<p class="carte-vide">Aucune idee recue pour le moment.</p>';
+      return;
+    }
+    zone.innerHTML = list.map((idee) => `
+      <div class="carte-item">
+        <div class="carte-date">${formatDateAffiche(idee.date)} &bull; anonyme</div>
+        <p>${escapeHtml(idee.texte)}</p>
+        <div class="carte-actions"><button class="btn btn-stop btn-small" data-id="${idee.id}" data-action="suppr-idee">Supprimer</button></div>
+      </div>
+    `).join('');
+  } catch (e) {
+    zone.innerHTML = `<p class="carte-vide">Erreur : ${escapeHtml(e.message)}</p>`;
+  }
+}
+
+document.getElementById('liste-idees').addEventListener('click', async (ev) => {
+  const btn = ev.target.closest('[data-action="suppr-idee"]');
+  if (!btn) return;
+  if (!confirm('Supprimer cette idee ?')) return;
+  try {
+    await api(`/api/idees/${btn.dataset.id}`, { method: 'DELETE' });
+    chargerIdees();
   } catch (e) {
     toast(e.message, true);
   }
