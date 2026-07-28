@@ -82,7 +82,8 @@ function defaultState() {
     annonces: [],
     evenements: [],
     finances: defaultFinances(),
-    idees: []
+    idees: [],
+    stats: { visites: {} }
   };
 }
 
@@ -93,6 +94,8 @@ function migrateState(state) {
   if (!state.annonces) { state.annonces = []; changed = true; }
   if (!state.evenements) { state.evenements = []; changed = true; }
   if (!state.idees) { state.idees = []; changed = true; }
+  if (!state.stats) { state.stats = { visites: {} }; changed = true; }
+  if (!state.stats.visites) { state.stats.visites = {}; changed = true; }
   if (!state.finances) { state.finances = defaultFinances(); changed = true; }
   ['banque', 'partenariat', 'stage', 'subventions', 'adhesions'].forEach((k) => {
     if (!state.finances[k]) { state.finances[k] = { actuel: 0, objectif: 0 }; changed = true; }
@@ -119,6 +122,31 @@ function calculerFinances(finances) {
   if (benefice > 4000) statut = 'vert';
   else if (benefice >= 1000) statut = 'orange';
   return { produits, benefice, statut };
+}
+
+// Additionne les visites des N derniers jours (jour actuel inclus) a partir
+// du compteur journalier { "2026-07-28": 5, ... }.
+function sommeVisites(visites, nbJours) {
+  let total = 0;
+  const aujourdhui = new Date();
+  for (let i = 0; i < nbJours; i++) {
+    const d = new Date(aujourdhui);
+    d.setDate(d.getDate() - i);
+    const cle = formatDateLocal(d);
+    total += visites[cle] || 0;
+  }
+  return total;
+}
+
+// Supprime les jours trop anciens (plus de 120 jours) pour ne pas faire
+// grossir le document indefiniment.
+function purgerVisites(visites) {
+  const limite = new Date();
+  limite.setDate(limite.getDate() - 120);
+  const limiteStr = formatDateLocal(limite);
+  Object.keys(visites).forEach((cle) => {
+    if (cle < limiteStr) delete visites[cle];
+  });
 }
 
 function formatDateLocal(d) {
@@ -185,6 +213,7 @@ async function saveState(state) {
   full.evenements = state.evenements;
   full.finances = state.finances;
   full.idees = state.idees;
+  full.stats = state.stats;
   writeLocalFile(full);
 }
 
@@ -410,6 +439,29 @@ app.delete('/api/idees/:id', requireAdmin, async (req, res) => {
   state.idees = state.idees.filter((x) => x.id !== req.params.id);
   await saveState(state);
   res.json({ ok: true });
+});
+
+// ---------- Routes : STATISTIQUES DE VISITES (espace responsables) ----------
+
+app.post('/api/stats/visite', async (req, res) => {
+  try {
+    const state = await loadState();
+    const cle = formatDateLocal(new Date());
+    state.stats.visites[cle] = (state.stats.visites[cle] || 0) + 1;
+    purgerVisites(state.stats.visites);
+    await saveState(state);
+    res.json({ ok: true });
+  } catch (e) {
+    res.json({ ok: false });
+  }
+});
+
+app.get('/api/stats', requireAdmin, async (req, res) => {
+  const state = await loadState();
+  res.json({
+    semaine: sommeVisites(state.stats.visites, 7),
+    mois: sommeVisites(state.stats.visites, 30)
+  });
 });
 
 // ---------- Routes : DOCUMENTS ----------
