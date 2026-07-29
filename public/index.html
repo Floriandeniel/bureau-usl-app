@@ -36,6 +36,7 @@
   <button class="tab-btn" data-tab="documents">Documents</button>
   <button class="tab-btn" data-tab="finances">Finances</button>
   <button class="tab-btn" data-tab="idees">Boite a idees</button>
+  <button class="tab-btn" data-tab="salles">Salles</button>
   <button class="tab-btn" data-tab="parametres" id="tab-btn-parametres" style="display:none">Parametres</button>
 </nav>
 
@@ -47,7 +48,7 @@
       <span class="banniere-emoji">&#127943;</span>
       <div class="banniere-texte">
         <strong>Bienvenue sur Bureau'USL !</strong>
-        <p>Chaque tuile t'emmene vers une section : les Alertes pour les infos importantes, le Calendrier pour les evenements a venir, les Documents a telecharger, la Presence pour voir qui est la en ce moment, les Finances pour suivre les comptes du club, et la Boite a idees pour proposer tes remarques anonymement.</p>
+        <p>Chaque tuile t'emmene vers une section : les Alertes pour les infos importantes, le Calendrier pour les evenements a venir, les Documents a telecharger, la Presence pour voir qui est la en ce moment, les Finances pour suivre les comptes du club, la Boite a idees pour proposer tes remarques anonymement, et les Salles pour voir qui est responsable des salles le week-end.</p>
       </div>
       <button id="btn-fermer-banniere" class="btn-fermer-banniere" aria-label="Fermer">&times;</button>
     </div>
@@ -82,6 +83,11 @@
         <div class="tuile-icone">&#128161;</div>
         <div class="tuile-titre">Boite a idees</div>
         <div class="tuile-apercu">Propose une idee, anonymement</div>
+      </button>
+      <button class="tuile tuile-anim" data-goto="salles" style="animation-delay:360ms" title="Voir les responsables de salles du week-end">
+        <div class="tuile-icone">&#127978;</div>
+        <div class="tuile-titre">Responsables de salles</div>
+        <div class="tuile-apercu" id="apercu-salles"><span class="spinner-inline"></span></div>
       </button>
     </div>
 
@@ -223,6 +229,32 @@
       <h2>Idees recues (espace responsables)</h2>
       <p class="hint">Ces messages sont anonymes : impossible de savoir qui les a envoyes.</p>
       <div id="liste-idees" class="liste-cartes"></div>
+    </div>
+  </section>
+
+  <!-- ONGLET SALLES (responsables de salles) -->
+  <section id="tab-salles" class="tab-content">
+    <div class="card" id="form-responsable-card" style="display:none">
+      <h2>&#127978; Ajouter un responsable de salle</h2>
+      <div class="form-row">
+        <label>Salle
+          <select id="resp-salle">
+            <option value="Salle 1">Salle 1</option>
+            <option value="Salle 2">Salle 2</option>
+          </select>
+        </label>
+        <label>Date <input type="date" id="resp-date" /></label>
+        <label>Heure de debut <input type="time" id="resp-heure-debut" /></label>
+        <label>Heure de fin <input type="time" id="resp-heure-fin" /></label>
+        <label>Nom du responsable <input type="text" id="resp-nom" placeholder="Ex: Jean Dupont" /></label>
+      </div>
+      <button id="btn-add-responsable" class="btn btn-go">Ajouter</button>
+    </div>
+
+    <div class="card">
+      <h2>&#127978; Responsables de salles (week-ends)</h2>
+      <p class="hint">Qui s'occupe de la Salle 1 et de la Salle 2, et sur quelles plages horaires.</p>
+      <div id="liste-responsables" class="liste-cartes"></div>
     </div>
   </section>
 
