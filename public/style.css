@@ -31,6 +31,9 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 18px 28px;
+  padding-top: max(18px, env(safe-area-inset-top));
+  padding-left: max(28px, env(safe-area-inset-left));
+  padding-right: max(28px, env(safe-area-inset-right));
   background: linear-gradient(90deg, #000 0%, #1c1600 60%, var(--or-fonce) 100%);
   border-bottom: 4px solid var(--or);
 }
@@ -89,27 +92,48 @@ body {
 /* ---------- Tabs ---------- */
 .tabs {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   background: var(--noir-panel);
-  padding: 10px 20px 0;
+  padding: 10px 14px;
   border-bottom: 2px solid var(--or-fonce);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--or-fonce) transparent;
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
+.tabs::-webkit-scrollbar { height: 5px; }
+.tabs::-webkit-scrollbar-thumb { background: var(--or-fonce); border-radius: 4px; }
 .tab-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex: 0 0 auto;
   background: var(--noir-panel-2);
   color: var(--gris-clair);
-  border: none;
-  border-radius: 10px 10px 0 0;
-  padding: 12px 22px;
-  font-size: 15px;
+  border: 2px solid transparent;
+  border-radius: 14px;
+  padding: 8px 14px;
+  font-size: 11.5px;
   font-weight: 700;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
 }
-.tab-btn:hover { background: var(--or-fonce); color: #000; }
+.tab-btn .tab-icone { font-size: 19px; line-height: 1; }
+.tab-btn .tab-label { text-transform: uppercase; letter-spacing: 0.3px; }
+.tab-btn:hover { border-color: var(--or-fonce); color: var(--or-clair); }
+.tab-btn:active { transform: scale(0.96); }
 .tab-btn.active {
   background: var(--or);
   color: #000;
+  border-color: var(--or-clair);
 }
 
 main { padding: 24px 28px 60px; max-width: 1100px; margin: 0 auto; }
@@ -397,7 +421,7 @@ tbody tr:hover { background: rgba(240, 185, 11, 0.10); }
 /* ---------- Toast ---------- */
 .toast {
   position: fixed;
-  bottom: 24px;
+  bottom: max(24px, calc(env(safe-area-inset-bottom) + 12px));
   right: 24px;
   background: var(--or);
   color: #000;
@@ -441,8 +465,41 @@ tbody tr:hover { background: rgba(240, 185, 11, 0.10); }
   100% { transform: scale(1); opacity: 1; }
 }
 
+/* ---------- Responsive : tablette / grand telephone ---------- */
 @media (max-width: 700px) {
-  .app-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .tabs { overflow-x: auto; }
-  .grille-tuiles { grid-template-columns: 1fr; }
+  .app-header { padding: 14px 16px; }
+  .logo-badge-img { width: 44px; height: 44px; border-radius: 10px; }
+  .app-header h1 { font-size: 19px; }
+  .subtitle { font-size: 11px; }
+  .header-right { gap: 8px; }
+  .btn-admin { padding: 8px 12px; font-size: 12.5px; }
+  .btn-notif { padding: 7px 10px; font-size: 15px; }
+
+  main { padding: 16px 14px 50px; }
+
+  .card { padding: 16px 16px; margin-bottom: 16px; }
+  .card h2 { font-size: 17px; }
+
+  .grille-tuiles { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .tuile { padding: 13px; }
+  .tuile-icone { font-size: 20px; }
+  .tuile-titre { font-size: 13px; margin-bottom: 5px; }
+  .tuile-apercu { font-size: 12px; }
+
+  .form-row, .form-col { gap: 10px; }
+  label { min-width: 0; width: 100%; }
+  .form-row { flex-direction: column; align-items: stretch; }
+
+  .toast { left: 14px; right: 14px; max-width: none; bottom: max(16px, calc(env(safe-area-inset-bottom) + 10px)); }
 }
+
+/* ---------- Responsive : petit telephone ---------- */
+@media (max-width: 380px) {
+  .app-header h1 { font-size: 17px; }
+  .tuile-titre { font-size: 12px; }
+  .tuile-icone { font-size: 18px; }
+  .tab-btn { padding: 7px 10px; }
+  .tab-btn .tab-icone { font-size: 17px; }
+  .tab-btn .tab-label { font-size: 10px; }
+}
+
