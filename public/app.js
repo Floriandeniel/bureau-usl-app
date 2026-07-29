@@ -61,6 +61,7 @@ function updateAdminUI() {
   document.getElementById('form-document-card').style.display = admin ? '' : 'none';
   document.getElementById('form-finances-card').style.display = admin ? '' : 'none';
   document.getElementById('liste-idees-card').style.display = admin ? '' : 'none';
+  document.getElementById('form-responsable-card').style.display = admin ? '' : 'none';
   if (!admin) {
     const tab = document.querySelector('.tab-btn.active');
     if (tab && tab.dataset.tab === 'parametres') switchTab('accueil');
@@ -93,6 +94,7 @@ document.getElementById('btn-admin').addEventListener('click', async () => {
     chargerFinances();
     chargerIdees();
     chargerStats();
+    chargerResponsables();
   } catch (e) {
     toast(e.message, true);
   }
@@ -122,6 +124,7 @@ function switchTab(name) {
   if (name === 'finances') chargerFinances();
   if (name === 'idees' && isAdmin()) chargerIdees();
   if (name === 'parametres' && isAdmin()) chargerStats();
+  if (name === 'salles') chargerResponsables();
 }
 
 document.querySelectorAll('.tab-btn').forEach((btn) => {
@@ -214,6 +217,17 @@ async function chargerAccueil() {
     document.getElementById('apercu-finances').textContent = `Benefice actuel : ${formatEuro(data.benefice)}`;
   } catch (e) {
     document.getElementById('apercu-finances').textContent = 'Indisponible';
+  }
+
+  try {
+    const list = await api('/api/responsables');
+    const today = todayStr();
+    const prochain = list.find((r) => r.date >= today) || list[0];
+    document.getElementById('apercu-salles').textContent = prochain
+      ? `${prochain.salle} : ${escapeHtml(prochain.nom)} le ${formatDateAffiche(prochain.date)}`
+      : 'Aucun responsable programme.';
+  } catch (e) {
+    document.getElementById('apercu-salles').textContent = 'Indisponible';
   }
 }
 
@@ -510,6 +524,62 @@ document.getElementById('btn-save-finances').addEventListener('click', async () 
     showCheck();
     chargerFinances();
     chargerAccueil();
+  } catch (e) {
+    toast(e.message, true);
+  }
+});
+
+// ---------- Responsables de salles ----------
+
+async function chargerResponsables() {
+  const zone = document.getElementById('liste-responsables');
+  try {
+    const list = await api('/api/responsables');
+    if (!list.length) {
+      zone.innerHTML = '<p class="carte-vide">Aucun responsable de salle programme pour le moment.</p>';
+      return;
+    }
+    zone.innerHTML = list.map((r) => `
+      <div class="carte-item">
+        <h3>&#127978; ${escapeHtml(r.salle)}</h3>
+        <div class="carte-date">${formatDateAffiche(r.date)}${r.heureDebut ? ' de ' + r.heureDebut : ''}${r.heureFin ? ' a ' + r.heureFin : ''}</div>
+        <p>Responsable : ${escapeHtml(r.nom)}</p>
+        ${isAdmin() ? `<div class="carte-actions"><button class="btn btn-stop btn-small" data-id="${r.id}" data-action="suppr-responsable">Supprimer</button></div>` : ''}
+      </div>
+    `).join('');
+  } catch (e) {
+    zone.innerHTML = `<p class="carte-vide">Erreur : ${escapeHtml(e.message)}</p>`;
+  }
+}
+
+document.getElementById('btn-add-responsable').addEventListener('click', async () => {
+  const salle = document.getElementById('resp-salle').value;
+  const date = document.getElementById('resp-date').value;
+  const heureDebut = document.getElementById('resp-heure-debut').value;
+  const heureFin = document.getElementById('resp-heure-fin').value;
+  const nom = document.getElementById('resp-nom').value.trim();
+  if (!date || !nom) return toast('Date et nom du responsable requis.', true);
+  try {
+    await api('/api/responsables', { method: 'POST', body: JSON.stringify({ salle, date, heureDebut, heureFin, nom }) });
+    document.getElementById('resp-date').value = '';
+    document.getElementById('resp-heure-debut').value = '';
+    document.getElementById('resp-heure-fin').value = '';
+    document.getElementById('resp-nom').value = '';
+    toast('Responsable ajoute.');
+    showCheck();
+    chargerResponsables();
+  } catch (e) {
+    toast(e.message, true);
+  }
+});
+
+document.getElementById('liste-responsables').addEventListener('click', async (ev) => {
+  const btn = ev.target.closest('[data-action="suppr-responsable"]');
+  if (!btn) return;
+  if (!confirm('Supprimer ce responsable de salle ?')) return;
+  try {
+    await api(`/api/responsables/${btn.dataset.id}`, { method: 'DELETE' });
+    chargerResponsables();
   } catch (e) {
     toast(e.message, true);
   }
