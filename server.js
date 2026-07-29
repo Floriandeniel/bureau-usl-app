@@ -83,7 +83,8 @@ function defaultState() {
     evenements: [],
     finances: defaultFinances(),
     idees: [],
-    stats: { visites: {} }
+    stats: { visites: {} },
+    responsables: []
   };
 }
 
@@ -94,6 +95,7 @@ function migrateState(state) {
   if (!state.annonces) { state.annonces = []; changed = true; }
   if (!state.evenements) { state.evenements = []; changed = true; }
   if (!state.idees) { state.idees = []; changed = true; }
+  if (!state.responsables) { state.responsables = []; changed = true; }
   if (!state.stats) { state.stats = { visites: {} }; changed = true; }
   if (!state.stats.visites) { state.stats.visites = {}; changed = true; }
   if (!state.finances) { state.finances = defaultFinances(); changed = true; }
@@ -214,6 +216,7 @@ async function saveState(state) {
   full.finances = state.finances;
   full.idees = state.idees;
   full.stats = state.stats;
+  full.responsables = state.responsables;
   writeLocalFile(full);
 }
 
@@ -409,6 +412,47 @@ app.put('/api/evenements/:id', requireAdmin, async (req, res) => {
 app.delete('/api/evenements/:id', requireAdmin, async (req, res) => {
   const state = await loadState();
   state.evenements = state.evenements.filter((x) => x.id !== req.params.id);
+  await saveState(state);
+  res.json({ ok: true });
+});
+
+// ---------- Routes : RESPONSABLES DE SALLES (week-ends) ----------
+
+app.get('/api/responsables', async (req, res) => {
+  const state = await loadState();
+  const list = [...state.responsables].sort((a, b) => (a.date + a.heureDebut + a.salle).localeCompare(b.date + b.heureDebut + b.salle));
+  res.json(list);
+});
+
+app.post('/api/responsables', requireAdmin, async (req, res) => {
+  const state = await loadState();
+  const { salle, date, heureDebut, heureFin, nom } = req.body;
+  if (!salle || !date || !nom) return res.status(400).json({ error: 'Salle, date et nom du responsable requis' });
+  const entree = {
+    id: uuidv4(),
+    salle,
+    date,
+    heureDebut: heureDebut || '',
+    heureFin: heureFin || '',
+    nom
+  };
+  state.responsables.push(entree);
+  await saveState(state);
+  res.status(201).json(entree);
+});
+
+app.put('/api/responsables/:id', requireAdmin, async (req, res) => {
+  const state = await loadState();
+  const r = state.responsables.find((x) => x.id === req.params.id);
+  if (!r) return res.status(404).json({ error: 'Entree introuvable' });
+  ['salle', 'date', 'heureDebut', 'heureFin', 'nom'].forEach((k) => { if (req.body[k] !== undefined) r[k] = req.body[k]; });
+  await saveState(state);
+  res.json(r);
+});
+
+app.delete('/api/responsables/:id', requireAdmin, async (req, res) => {
+  const state = await loadState();
+  state.responsables = state.responsables.filter((x) => x.id !== req.params.id);
   await saveState(state);
   res.json({ ok: true });
 });
